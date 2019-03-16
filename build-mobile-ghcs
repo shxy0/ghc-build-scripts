@@ -39,7 +39,8 @@ Options:
 
 # -----------------------------------------------------------------------------
 # Helper functions
-function cabal_with_new_autoconfig () {
+function cabal_with_new_autoconfig () 
+{
     cabal=$1
     pkg=$2
     echo "Building $pkg..."
