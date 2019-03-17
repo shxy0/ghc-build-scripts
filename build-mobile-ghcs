@@ -69,34 +69,45 @@ function cabal_with_new_autoconfig ()
 # -----------------------------------------------------------------------------
 
 
-CLEAN=1 # clean prior to building
+CLEAN=1     # clean prior to building
 CONFIGURE=1 # run ./configure
-BUILD=1 # run make
+
+BUILD=1   # run make
 INSTALL=1 # run make install
+
 DEBUG=0 # debug values
 DEVEL=0 # Use development snapshot (fro the cross compiler only...)
+
 CLANG=
 
-while [ "$#" -gt 0 ]; do
+while [ "$#" -gt 0 ]; 
+do
     case "$1" in
-        --no-clean) CLEAN=0; shift 1;;
+        --no-clean)     CLEAN=0;     shift 1;;
         --no-configure) CONFIGURE=0; shift 1;;
-        --no-build) BUILD=0; shift 1;;
-        --no-install) INSTALL=0; shift 1;;
-        --with-devel) DEVEL=1; shift 1;;
-        --prefix=*) PREFIX="${1#*=}"; shift 1;;
-        --iconv=*) ICONV="${1#*=}"; shift 1;;
-        --libffi=*) LIBFFI="${1#*=}"; shift 1;;
-        --clang=*) CLANG="${1#*=}"; shift 1;;
-        -d|--debug) DEBUG=1; shift 1;;
-        -h|--help) help_text; exit;;
-        -*) echo "unknown option: $1" >&2; exit 1;;
-        *) args+="$1"; shift 1;;
+        
+        --no-build)     BUILD=0;    shift 1;;
+        --no-install)   INSTALL=0;  shift 1;;
+        
+        --with-devel)   DEVEL=1;    shift 1;;
+        
+        --prefix=*)     PREFIX="${1#*=}";   shift 1;;
+        --iconv=*)      ICONV="${1#*=}";    shift 1;;
+        --libffi=*)     LIBFFI="${1#*=}";   shift 1;;
+        --clang=*)      CLANG="${1#*=}";    shift 1;;
+        
+        -d|--debug)     DEBUG=1;    shift 1;;
+        
+        -h|--help)  help_text; exit;;
+        -*)         echo "unknown option: $1" >&2; exit 1;;
+        *)          args+="$1"; shift 1;;
     esac
 done
 
 TARGETS=${args:-"host x86_64-android armv7-android aarch64-android aarch64-ios x86_64-ios arm-raspberrypi"}
-if [ $DEBUG -eq 1 ]; then
+
+if [ $DEBUG -eq 1 ]; 
+then
     echo "   PREFIX=$PREFIX"
     echo "    ICONV=$ICONV"
     echo "    CLANG=$CLANG"
@@ -191,7 +202,8 @@ do
             ;;
     esac
 
-    if [ $CLEAN -eq 1 ]; then
+    if [ $CLEAN -eq 1 ]; 
+    then
         # drop everything, except for build folders
         make --silent clean && make -s distclean
         git clean -x --force -d --quiet -e "_*"
