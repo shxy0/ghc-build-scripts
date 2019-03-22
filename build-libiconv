@@ -2,7 +2,8 @@
 set -e
 # set -x
 
-help_text() {
+help_text() 
+{
     echo "Usage:
   ${0##*/} [-h] --host=... --prefix=... [--version=X.Y] [target1 target2 target3]
 
@@ -26,70 +27,111 @@ Options:
 
 version=1.15
 
-while [ "$#" -gt 0 ]; do
+while [ "$#" -gt 0 ]; 
+do
     case "$1" in
-        --prefix=*) prefix="${1#*=}"; shift 1;;
-        --host=*) host="${1#*=}"; shift 1;;
-        --version=*) version="${1#*=}"; shift 1;;
-        -h|--help) help_text; exit;;
-        -*) echo "unknown option: $1" >&2; exit 1;;
-        *) args+="$1"; shift 1;;
+        --prefix=*)   prefix="${1#*=}";   shift 1;;
+        --host=*)     host="${1#*=}";     shift 1;;
+        
+        --version=*)  version="${1#*=}";  shift 1;;
+        
+        -h|--help)    help_text; exit;;
+        -*)           echo "unknown option: $1" >&2; exit 1;;
+        
+        *)        args+="$1"; shift 1;;
     esac
 done
 
-if [ -z $host ]; then
-    echo "no --host given" >&2
-    exit 1
+if [ -z $host ]; 
+then
+    echo "no --host given, use default" >&2
+    host="windows-x86_64"
+    # exit 1
 fi
-if [ -z $prefix ]; then
+
+if [ -z $prefix ]; 
+then
     echo "no --prefix given" >&2
     exit 1
 fi
 
 
 TARGETS=${args:-"aarch64-linux-android arm-linux-androideabi"}
-
+echo $TARGETS
 
 if [ ! -f libiconv-$version.tar.gz ]; then
     curl -O -L https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$version.tar.gz
 fi
+
 tar xzf libiconv-$version.tar.gz
+
 cd libiconv-$version
-for target in $TARGETS; do
+
+for target in $TARGETS; 
+do
     # extract the arch as the first component of the target triple
     arch="${target%%-*}"
     # rewrite aarch64 -> arm64; this is such a mess...
     if [ "$arch" == "aarch64" ]; then arch=arm64; fi
 
+    echo 
     ANDROID_HOST=$target
     ANDROID_BUILD=$host
     ANDROID_ARCH=$arch
-    ANDROID_NDK=$HOME/Library/Android/sdk/ndk-bundle
+
+    echo $ANDROID_HOST
+    echo $ANDROID_BUILD
+    echo $ANDROID_ARCH
+    
+    # ANDROID_NDK=$HOME/Library/Android/sdk/ndk-bundle
+    ANDROID_NDK=$NDK_ROOT
+    echo $ANDROID_NDK
+
     ANDROID_VERSION=24
     ANDROID_TOOLCHAIN_VERSION=4.9
+
     case "$arch" in
         x86*) ANDROID_TOOLCHAIN=$arch-$ANDROID_TOOLCHAIN_VERSION ;;
         *)    ANDROID_TOOLCHAIN=$target-$ANDROID_TOOLCHAIN_VERSION ;;
     esac
+    
+    echo $ANDROID_TOOLCHAIN
+    
     ANDROID_SYSROOT=$ANDROID_NDK/platforms/android-$ANDROID_VERSION/arch-$ANDROID_ARCH
+    echo $ANDROID_SYSROOT
+    
     CFLAGS=--sysroot=$ANDROID_SYSROOT
     #export CPP=$ANDROID_HOST-gcc -E
     CPPFLAGS=--sysroot=$ANDROID_SYSROOT
+    
     AR=$ANDROID_HOST-ar
     RANLIB=$ANDROID_HOST-ranlib
+    echo $AR
+    echo $RANLIB
+
     PATH=$ANDROID_NDK/toolchains/$ANDROID_TOOLCHAIN/prebuilt/$ANDROID_BUILD/bin:$PATH
-    if [ -f Makefile ]; then
+    echo $PATH
+    
+    if [ -f Makefile ]; 
+    then
         echo "Cleaning up build folder..."
         make clean --silent
     fi
+    
     echo "Configuring $target..."
+    
     CFLAGS=$CFLAGS CPPFLAGS=$CPPFLAGS AR=$AR RANLIB=$RANLIB PATH=$PATH \
-          ./configure --prefix=$prefix/$target --host=$ANDROID_HOST \
-                      --with-sysroot=$ANDROID_SYSROOT --silent \
-                      --enable-shared=no --enable-static=yes
+          ./configure --silent  \
+                      --prefix=$prefix/$target  \
+                      --host=$ANDROID_HOST      \
+                      --with-sysroot=$ANDROID_SYSROOT \
+                      --enable-shared=no  \
+                      --enable-static=yes
+                      
     echo "Building $target"
     CFLAGS=$CFLAGS CPPFLAGS=$CPPFLAGS AR=$AR RANLIB=$RANLIB PATH=$PATH \
           make -j --silent
+          
     echo "Installing $target..."
     make --silent install
 done
